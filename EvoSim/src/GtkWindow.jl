@@ -1,0 +1,2 @@
+module GtkWindow
+end
