@@ -1,37 +1,26 @@
-module EvoSim
-
-using Gtk
 include("sim/Sim.jl")
+include("./GtkView.jl")
+module EvoSim
+    export run
+    import ..Sim
+    import ..GtkView
 
-export run
-
-# For now, just draw an overview of the world
-function run()
-    win = GtkWindow("EvoSim", 400, 400)
-    c = @GtkCanvas()
-    push!(win,c)
-
-    world = Sim.generate_world((200, 200))
-
-    @guarded draw(c) do widget
-        ctx = getgc(c)
-
-        for x in 0:199
-            for y in 0:199
-                r,g,b = Sim.get_surface_color(world.surface_map[x+1, y+1])
-                set_source_rgb(ctx, r, g, b)
-                rectangle(ctx, x * 2,  y * 2, 2, 2)
-                fill(ctx)
+    # For now, just draw an overview of the world
+    function run()
+        running = true
+        GtkView.initialize()
+        GtkView.set_on_close_callback(() -> running = false)
+        world = Sim.generate_world((500, 500))
+        GtkView.set_world(world)
+        try
+            while running
+                sleep(1)
+                world = Sim.generate_world((500, 500))
+                GtkView.set_world(world)
+                GtkView.trigger_render()        
             end
+        catch InterruptException
+            GtkView.close_window()
         end
     end
-    showall(win)
-
-    while true
-        sleep(1)
-        world = Sim.generate_world((200, 200))
-        draw(c)
-    end
-end
-
 end # module
